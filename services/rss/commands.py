@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes, CommandHandler, Application
 import logging
 from .manager import RSSManager
 from pathlib import Path
+from urllib.parse import urlparse
 
 rss_manager = RSSManager()
 RSS_CHANNEL = "@h5gamerss"  # 固定频道ID
@@ -105,7 +106,22 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     logging.error(f"发送sitemap到频道失败: {url}")
         else:
             if "今天已经更新过此sitemap" in error_msg:
-                await update.message.reply_text(f"该sitemap今天已经更新过")
+                # 获取当前文件并发送给用户
+                try:
+                    domain = urlparse(url).netloc
+                    current_file = rss_manager.sitemap_dir / domain / "sitemap-current.xml"
+                    if current_file.exists():
+                        await context.bot.send_document(
+                            chat_id=update.effective_chat.id,
+                            document=current_file,
+                            caption=f"今天的Sitemap文件\nURL: {url}"
+                        )
+                        await update.message.reply_text(f"该sitemap今天已经更新过")
+                    else:
+                        await update.message.reply_text(f"该sitemap今天已经更新过")
+                except Exception as e:
+                    logging.error(f"发送文件给用户失败: {str(e)}")
+                    await update.message.reply_text(f"该sitemap今天已经更新过")
             else:
                 logging.error(f"添加sitemap监控失败: {url} 原因: {error_msg}")
                 await update.message.reply_text(f"添加sitemap监控失败：{url}\n原因：{error_msg}")
@@ -129,6 +145,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
 
 
 
