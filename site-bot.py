@@ -35,6 +35,8 @@ def main():
         if len(tokens) >= 1:
             for tel_token in tokens:
                 tasks.append(telegram_bot.start_task(tel_token))
+                # 为每个bot添加定时任务
+                tasks.append(telegram_bot.scheduled_task(tel_token))
 
     try:
         loop.run_until_complete(asyncio.gather(*tasks))
@@ -49,3 +51,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
