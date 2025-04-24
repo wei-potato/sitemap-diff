@@ -7,9 +7,26 @@ from pathlib import Path
 rss_manager = RSSManager()
 RSS_CHANNEL = "@h5gamerss"  # 固定频道ID
 
+async def check_bot_channel_admin(context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """检查机器人是否是频道管理员"""
+    try:
+        # 获取机器人在频道中的成员信息
+        chat_member = await context.bot.get_chat_member(
+            chat_id=RSS_CHANNEL,
+            user_id=context.bot.id
+        )
+        return chat_member.status in ['administrator', 'creator']
+    except Exception as e:
+        logging.error(f"检查机器人权限失败: {str(e)}")
+        return False
+
 async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path: Path, url: str) -> bool:
     """发送sitemap文件到频道"""
     try:
+        # 先检查机器人权限
+        if not await check_bot_channel_admin(context):
+            raise Exception("机器人不是频道管理员，请先将机器人添加为频道管理员")
+
         # 发送文件
         await context.bot.send_document(
             chat_id=RSS_CHANNEL,
@@ -22,7 +39,7 @@ async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path:
         return True
     except Exception as e:
         logging.error(f"发送文件到频道失败: {str(e)}")
-        return False
+        return False, str(e)
 
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """处理 /rss 命令"""
@@ -76,9 +93,15 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             # 如果有新文件，发送到频道
             if dated_file:
-                if await send_sitemap_to_channel(context, dated_file, url):
+                send_result = await send_sitemap_to_channel(context, dated_file, url)
+                if isinstance(send_result, tuple):  # 发送失败带错误信息
+                    success, error_msg = send_result
+                    await update.message.reply_text(f"文件添加成功，但发送到频道失败：{error_msg}\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
+                    logging.error(f"发送sitemap到频道失败: {url}, 原因: {error_msg}")
+                elif send_result:  # 发送成功
                     logging.info(f"已发送sitemap到频道: {url}")
-                else:
+                else:  # 发送失败无错误信息
+                    await update.message.reply_text(f"文件添加成功，但发送到频道失败\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
                     logging.error(f"发送sitemap到频道失败: {url}")
         else:
             if "今天已经更新过此sitemap" in error_msg:
@@ -106,6 +129,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
 
 
 
