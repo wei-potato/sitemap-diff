@@ -2,8 +2,8 @@ import logging
 import os
 import asyncio
 
-from business import telegram_bot, discord_bot
-from kernel.config import discord_config, telegram_config
+from apps import telegram_bot, discord_bot
+from core.config import discord_config, telegram_config
 
 
 def main():
