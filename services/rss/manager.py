@@ -20,14 +20,14 @@ class RSSManager:
         if not self.feeds_file.exists():
             self.feeds_file.write_text('[]')
 
-    def download_sitemap(self, url: str) -> tuple[bool, str, Path | None]:
+    def download_sitemap(self, url: str) -> tuple[bool, str, Path | None, list[str]]:
         """下载并保存sitemap文件
 
         Args:
             url: sitemap的URL
 
         Returns:
-            tuple[bool, str, Path | None]: (是否成功, 错误信息, 带日期的文件路径)
+            tuple[bool, str, Path | None, list[str]]: (是否成功, 错误信息, 带日期的文件路径, 新增的URL列表)
         """
         try:
             # 获取域名作为目录名
@@ -42,7 +42,7 @@ class RSSManager:
             if last_update_file.exists():
                 last_date = last_update_file.read_text().strip()
                 if last_date == today:
-                    return False, "今天已经更新过此sitemap", None
+                    return False, "今天已经更新过此sitemap", None, []  # 只添加空列表返回
 
             # 下载新文件
             headers = {
@@ -56,8 +56,11 @@ class RSSManager:
             latest_file = domain_dir / "sitemap-latest.xml"
             dated_file = domain_dir / f"sitemap_{today}.xml"
 
-            # 如果存在current文件，将其移动到latest
+            new_urls = []
+            # 如果存在current文件，比较差异
             if current_file.exists():
+                old_content = current_file.read_text()
+                new_urls = self.compare_sitemaps(response.text, old_content)
                 current_file.replace(latest_file)
 
             # 保存新文件
@@ -68,21 +71,21 @@ class RSSManager:
             last_update_file.write_text(today)
 
             logging.info(f"sitemap已保存到: {current_file}")
-            return True, "", dated_file
+            return True, "", dated_file, new_urls  # 只添加新URLs返回
 
         except requests.exceptions.RequestException as e:
-            return False, f"下载失败: {str(e)}", None
+            return False, f"下载失败: {str(e)}", None, []  # 只添加空列表返回
         except Exception as e:
-            return False, f"保存失败: {str(e)}", None
+            return False, f"保存失败: {str(e)}", None, []  # 只添加空列表返回
 
-    def add_feed(self, url: str) -> tuple[bool, str, Path | None]:
+    def add_feed(self, url: str) -> tuple[bool, str, Path | None, list[str]]:
         """添加sitemap监控
 
         Args:
             url: sitemap的URL
 
         Returns:
-            tuple[bool, str, Path | None]: (是否成功, 错误信息, 带日期的文件路径)
+            tuple[bool, str, Path | None, list[str]]: (是否成功, 错误信息, 带日期的文件路径, 新增的URL列表)
         """
         try:
             logging.info(f"尝试添加sitemap监控: {url}")
@@ -91,25 +94,25 @@ class RSSManager:
             feeds = self.get_feeds()
             if url not in feeds:
                 # 如果是新的feed，先尝试下载
-                success, error_msg, dated_file = self.download_sitemap(url)
+                success, error_msg, dated_file, new_urls = self.download_sitemap(url)
                 if not success:
-                    return False, error_msg, None
+                    return False, error_msg, None, []
 
                 # 添加到监控列表
                 feeds.append(url)
                 self.feeds_file.write_text(json.dumps(feeds, indent=2))
                 logging.info(f"成功添加sitemap监控: {url}")
-                return True, "", dated_file
+                return True, "", dated_file, new_urls
             else:
                 # 如果feed已存在，仍然尝试下载（可能是新的一天）
-                success, error_msg, dated_file = self.download_sitemap(url)
+                success, error_msg, dated_file, new_urls = self.download_sitemap(url)
                 if not success:
-                    return False, error_msg, None
-                return True, "已存在的feed更新成功", dated_file
+                    return False, error_msg, None, []
+                return True, "已存在的feed更新成功", dated_file, new_urls
 
         except Exception as e:
             logging.error(f"添加sitemap监控失败: {url}", exc_info=True)
-            return False, f"添加失败: {str(e)}", None
+            return False, f"添加失败: {str(e)}", None, []
 
     def remove_feed(self, url: str) -> tuple[bool, str]:
         """删除RSS订阅
@@ -169,4 +172,6 @@ class RSSManager:
         except Exception as e:
             logging.error(f"比较sitemap失败: {str(e)}")
             return []
+
+
 

@@ -42,6 +42,21 @@ async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path:
         logging.error(f"发送文件到频道失败: {str(e)}")
         return False, str(e)
 
+async def send_new_urls_to_channel(context: ContextTypes.DEFAULT_TYPE, url: str, new_urls: list[str]) -> None:
+    """发送新增的URL到频道"""
+    if not new_urls:
+        return
+
+    try:
+        message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
+        await context.bot.send_message(
+            chat_id=RSS_CHANNEL,
+            text=message,
+            disable_web_page_preview=True
+        )
+    except Exception as e:
+        logging.error(f"发送新增URL到频道失败: {str(e)}")
+
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """处理 /rss 命令"""
     user = update.message.from_user
@@ -84,7 +99,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             return
 
         logging.info(f"执行add命令，URL: {url}")
-        success, error_msg, dated_file = rss_manager.add_feed(url)
+        success, error_msg, dated_file, new_urls = rss_manager.add_feed(url)  # 只改这一行，接收new_urls
 
         if success:
             if "已存在的feed更新成功" in error_msg:
@@ -95,13 +110,15 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             # 如果有新文件，发送到频道
             if dated_file:
                 send_result = await send_sitemap_to_channel(context, dated_file, url)
-                if isinstance(send_result, tuple):  # 发送失败带错误信息
+                if isinstance(send_result, tuple):
                     success, error_msg = send_result
                     await update.message.reply_text(f"文件添加成功，但发送到频道失败：{error_msg}\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
                     logging.error(f"发送sitemap到频道失败: {url}, 原因: {error_msg}")
-                elif send_result:  # 发送成功
+                elif send_result:
                     logging.info(f"已发送sitemap到频道: {url}")
-                else:  # 发送失败无错误信息
+                    # 只在这里添加发送新URLs的调用
+                    await send_new_urls_to_channel(context, url, new_urls)
+                else:
                     await update.message.reply_text(f"文件添加成功，但发送到频道失败\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
                     logging.error(f"发送sitemap到频道失败: {url}")
         else:
@@ -145,6 +162,8 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
+
 
 
 
