@@ -30,21 +30,21 @@ class RSSManager:
 
     def add_feed(self, url: str) -> tuple[bool, str]:
         """添加RSS订阅
-        
+
         Args:
             url: RSS订阅链接
-        
+
         Returns:
             tuple[bool, str]: (是否添加成功, 错误信息)
         """
         try:
             logging.info(f"尝试添加RSS订阅: {url}")
             feeds = self.get_feeds()
-            
+
             if url in feeds:
                 logging.warning(f"RSS订阅已存在: {url}")
                 return False, "该RSS订阅已存在"
-            
+
             feeds.append(url)
             logging.info(f"正在写入RSS订阅到文件: {self.feeds_file}")
             self.feeds_file.write_text(json.dumps(feeds, indent=2))
@@ -54,5 +54,30 @@ class RSSManager:
             logging.error(f"添加RSS订阅失败: {url}", exc_info=True)
             return False, f"添加失败: {str(e)}"
 
+    def remove_feed(self, url: str) -> tuple[bool, str]:
+        """删除RSS订阅
+
+        Args:
+            url: RSS订阅链接
+
+        Returns:
+            tuple[bool, str]: (是否删除成功, 错误信息)
+        """
+        try:
+            logging.info(f"尝试删除RSS订阅: {url}")
+            feeds = self.get_feeds()
+
+            if url not in feeds:
+                logging.warning(f"RSS订阅不存在: {url}")
+                return False, "该RSS订阅不存在"
+
+            feeds.remove(url)
+            logging.info(f"正在写入RSS订阅到文件: {self.feeds_file}")
+            self.feeds_file.write_text(json.dumps(feeds, indent=2))
+            logging.info(f"成功删除RSS订阅: {url}")
+            return True, ""
+        except Exception as e:
+            logging.error(f"删除RSS订阅失败: {url}", exc_info=True)
+            return False, f"删除失败: {str(e)}"
 
 
