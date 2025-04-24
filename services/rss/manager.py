@@ -146,11 +146,27 @@ class RSSManager:
             logging.error("读取feeds文件失败", exc_info=True)
             return []
 
+    def compare_sitemaps(self, current_content: str, old_content: str) -> list[str]:
+        """比较新旧sitemap，返回新增的URL列表"""
+        try:
+            from xml.etree import ElementTree as ET
 
+            current_root = ET.fromstring(current_content)
+            old_root = ET.fromstring(old_content)
 
+            current_urls = set()
+            old_urls = set()
 
+            ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 
+            for url in current_root.findall('.//ns:url/ns:loc', ns):
+                current_urls.add(url.text)
 
+            for url in old_root.findall('.//ns:url/ns:loc', ns):
+                old_urls.add(url.text)
 
-
+            return list(current_urls - old_urls)
+        except Exception as e:
+            logging.error(f"比较sitemap失败: {str(e)}")
+            return []
 
