@@ -13,7 +13,12 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
     if not context.args:
         logging.info("显示RSS命令帮助信息")
-        await update.message.reply_text("请使用以下命令：\n/rss list - 显示所有订阅\n/rss add URL - 添加订阅\n/rss del URL - 删除订阅")
+        await update.message.reply_text(
+            "请使用以下命令：\n"
+            "/rss list - 显示所有监控的sitemap\n"
+            "/rss add URL - 添加sitemap监控（URL必须以sitemap.xml结尾）\n"
+            "/rss del URL - 删除sitemap监控"
+        )
         return
 
     cmd = context.args[0].lower()
@@ -32,18 +37,23 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
     elif cmd == 'add':
         if len(context.args) < 2:
             logging.warning("add命令缺少URL参数")
-            await update.message.reply_text("请提供RSS订阅链接\n例如：/rss add https://example.com/feed.xml")
+            await update.message.reply_text("请提供sitemap.xml的URL\n例如：/rss add https://example.com/sitemap.xml")
             return
 
         url = context.args[1]
+        if not url.endswith('sitemap.xml'):
+            logging.warning(f"无效的sitemap URL: {url}")
+            await update.message.reply_text("URL必须以sitemap.xml结尾")
+            return
+
         logging.info(f"执行add命令，URL: {url}")
         success, error_msg = rss_manager.add_feed(url)
         if success:
-            logging.info(f"成功添加RSS订阅: {url}")
-            await update.message.reply_text(f"成功添加RSS订阅：{url}")
+            logging.info(f"成功添加sitemap监控: {url}")
+            await update.message.reply_text(f"成功添加sitemap监控：{url}")
         else:
-            logging.error(f"添加RSS订阅失败: {url} 原因: {error_msg}")
-            await update.message.reply_text(f"添加RSS订阅失败：{url}\n原因：{error_msg}")
+            logging.error(f"添加sitemap监控失败: {url} 原因: {error_msg}")
+            await update.message.reply_text(f"添加sitemap监控失败：{url}\n原因：{error_msg}")
 
     elif cmd == 'del':
         if len(context.args) < 2:
@@ -64,6 +74,8 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
+
 
 
 
