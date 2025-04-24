@@ -116,5 +116,15 @@ class RSSManager:
             logging.error(f"删除RSS订阅失败: {url}", exc_info=True)
             return False, f"删除失败: {str(e)}"
 
+    def get_feeds(self) -> list:
+        """获取所有监控的feeds"""
+        try:
+            content = self.feeds_file.read_text()
+            return json.loads(content)
+        except Exception as e:
+            logging.error("读取feeds文件失败", exc_info=True)
+            return []
+
+
 
 
