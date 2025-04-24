@@ -20,7 +20,39 @@ class RSSManager:
     def get_feeds(self):
         """获取所有RSS订阅"""
         try:
-            return json.loads(self.feeds_file.read_text())
+            logging.info(f"正在读取RSS订阅列表: {self.feeds_file}")
+            feeds = json.loads(self.feeds_file.read_text())
+            logging.info(f"成功读取RSS订阅列表，共 {len(feeds)} 个订阅")
+            return feeds
         except Exception as e:
-            logging.error(f"读取RSS订阅列表失败: {e}")
+            logging.error(f"读取RSS订阅列表失败: {e}", exc_info=True)
             return []
+
+    def add_feed(self, url: str) -> tuple[bool, str]:
+        """添加RSS订阅
+        
+        Args:
+            url: RSS订阅链接
+        
+        Returns:
+            tuple[bool, str]: (是否添加成功, 错误信息)
+        """
+        try:
+            logging.info(f"尝试添加RSS订阅: {url}")
+            feeds = self.get_feeds()
+            
+            if url in feeds:
+                logging.warning(f"RSS订阅已存在: {url}")
+                return False, "该RSS订阅已存在"
+            
+            feeds.append(url)
+            logging.info(f"正在写入RSS订阅到文件: {self.feeds_file}")
+            self.feeds_file.write_text(json.dumps(feeds, indent=2))
+            logging.info(f"成功添加RSS订阅: {url}")
+            return True, ""
+        except Exception as e:
+            logging.error(f"添加RSS订阅失败: {url}", exc_info=True)
+            return False, f"添加失败: {str(e)}"
+
+
+
