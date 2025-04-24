@@ -2,8 +2,27 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler, Application
 import logging
 from .manager import RSSManager
+from pathlib import Path
 
 rss_manager = RSSManager()
+RSS_CHANNEL = "@h5gamerss"  # 固定频道ID
+
+async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path: Path, url: str) -> bool:
+    """发送sitemap文件到频道"""
+    try:
+        # 发送文件
+        await context.bot.send_document(
+            chat_id=RSS_CHANNEL,
+            document=file_path,
+            caption=f"新的Sitemap文件\nURL: {url}"
+        )
+        # 发送成功后删除临时文件
+        file_path.unlink()
+        logging.info(f"已发送sitemap文件到频道并删除: {file_path}")
+        return True
+    except Exception as e:
+        logging.error(f"发送文件到频道失败: {str(e)}")
+        return False
 
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """处理 /rss 命令"""
@@ -47,13 +66,26 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             return
 
         logging.info(f"执行add命令，URL: {url}")
-        success, error_msg = rss_manager.add_feed(url)
+        success, error_msg, dated_file = rss_manager.add_feed(url)
+
         if success:
-            logging.info(f"成功添加sitemap监控: {url}")
-            await update.message.reply_text(f"成功添加sitemap监控：{url}")
+            if "已存在的feed更新成功" in error_msg:
+                await update.message.reply_text(f"该sitemap已在监控列表中")
+            else:
+                await update.message.reply_text(f"成功添加sitemap监控：{url}")
+
+            # 如果有新文件，发送到频道
+            if dated_file:
+                if await send_sitemap_to_channel(context, dated_file, url):
+                    logging.info(f"已发送sitemap到频道: {url}")
+                else:
+                    logging.error(f"发送sitemap到频道失败: {url}")
         else:
-            logging.error(f"添加sitemap监控失败: {url} 原因: {error_msg}")
-            await update.message.reply_text(f"添加sitemap监控失败：{url}\n原因：{error_msg}")
+            if "今天已经更新过此sitemap" in error_msg:
+                await update.message.reply_text(f"该sitemap今天已经更新过")
+            else:
+                logging.error(f"添加sitemap监控失败: {url} 原因: {error_msg}")
+                await update.message.reply_text(f"添加sitemap监控失败：{url}\n原因：{error_msg}")
 
     elif cmd == 'del':
         if len(context.args) < 2:
@@ -74,6 +106,8 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
+
 
 
 
