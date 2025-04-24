@@ -30,6 +30,12 @@ class RSSManager:
             tuple[bool, str]: (是否成功, 错误信息)
         """
         try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            }
+            response = requests.get(url, timeout=10, headers=headers)
+            response.raise_for_status()
+
             # 获取域名作为目录名
             domain = urlparse(url).netloc
             domain_dir = self.sitemap_dir / domain
@@ -39,11 +45,6 @@ class RSSManager:
             date_str = datetime.now().strftime("%Y%m%d")
             file_name = f"sitemap_{date_str}.xml"
             file_path = domain_dir / file_name
-
-            # 下载sitemap
-            logging.info(f"开始下载sitemap: {url}")
-            response = requests.get(url, timeout=10)
-            response.raise_for_status()
 
             # 保存文件
             file_path.write_text(response.text)
@@ -124,6 +125,7 @@ class RSSManager:
         except Exception as e:
             logging.error("读取feeds文件失败", exc_info=True)
             return []
+
 
 
 
