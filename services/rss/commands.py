@@ -8,28 +8,27 @@ from urllib.parse import urlparse
 rss_manager = RSSManager()
 RSS_CHANNEL = "@h5gamerss"  # 固定频道ID
 
-async def check_bot_channel_admin(context: ContextTypes.DEFAULT_TYPE) -> bool:
+async def check_bot_channel_admin(bot) -> bool:
     """检查机器人是否是频道管理员"""
     try:
-        # 获取机器人在频道中的成员信息
-        chat_member = await context.bot.get_chat_member(
+        chat_member = await bot.get_chat_member(
             chat_id=RSS_CHANNEL,
-            user_id=context.bot.id
+            user_id=bot.id
         )
         return chat_member.status in ['administrator', 'creator']
     except Exception as e:
         logging.error(f"检查机器人权限失败: {str(e)}")
         return False
 
-async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path: Path, url: str) -> bool:
+async def send_sitemap_to_channel(bot, file_path: Path, url: str) -> bool:
     """发送sitemap文件到频道"""
     try:
         # 先检查机器人权限
-        if not await check_bot_channel_admin(context):
+        if not await check_bot_channel_admin(bot):
             raise Exception("机器人不是频道管理员，请先将机器人添加为频道管理员")
 
         # 发送文件
-        await context.bot.send_document(
+        await bot.send_document(
             chat_id=RSS_CHANNEL,
             document=file_path,
             caption=f"新的Sitemap文件\nURL: {url}"
@@ -40,16 +39,16 @@ async def send_sitemap_to_channel(context: ContextTypes.DEFAULT_TYPE, file_path:
         return True
     except Exception as e:
         logging.error(f"发送文件到频道失败: {str(e)}")
-        return False, str(e)
+        return False
 
-async def send_new_urls_to_channel(context: ContextTypes.DEFAULT_TYPE, url: str, new_urls: list[str]) -> None:
+async def send_new_urls_to_channel(bot, url: str, new_urls: list[str]) -> None:
     """发送新增的URL到频道"""
     if not new_urls:
         return
 
     try:
         message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
-        await context.bot.send_message(
+        await bot.send_message(
             chat_id=RSS_CHANNEL,
             text=message,
             disable_web_page_preview=True
@@ -109,7 +108,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 
             # 如果有新文件，发送到频道
             if dated_file:
-                send_result = await send_sitemap_to_channel(context, dated_file, url)
+                send_result = await send_sitemap_to_channel(context.bot, dated_file, url)
                 if isinstance(send_result, tuple):
                     success, error_msg = send_result
                     await update.message.reply_text(f"文件添加成功，但发送到频道失败：{error_msg}\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
@@ -117,7 +116,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 elif send_result:
                     logging.info(f"已发送sitemap到频道: {url}")
                     # 只在这里添加发送新URLs的调用
-                    await send_new_urls_to_channel(context, url, new_urls)
+                    await send_new_urls_to_channel(context.bot, url, new_urls)
                 else:
                     await update.message.reply_text(f"文件添加成功，但发送到频道失败\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
                     logging.error(f"发送sitemap到频道失败: {url}")
@@ -162,6 +161,8 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
+
 
 
 

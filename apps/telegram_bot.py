@@ -71,15 +71,10 @@ async def scheduled_task(token):
                 logging.info(f"正在检查订阅源: {url}")
                 success, error_msg, dated_file, new_urls = rss_manager.add_feed(url)
 
-                # 正确创建 CallbackContext
-                from telegram.ext import CallbackContext
-                context = CallbackContext(application=None)
-                context._bot = bot  # 使用内部属性设置 bot
-
                 if success and dated_file:
-                    send_result = await send_sitemap_to_channel(context, dated_file, url)
+                    send_result = await send_sitemap_to_channel(bot, dated_file, url)
                     if send_result:
-                        await send_new_urls_to_channel(context, url, new_urls)
+                        await send_new_urls_to_channel(bot, url, new_urls)
                         logging.info(f"订阅源 {url} 更新成功，发现 {len(new_urls)} 个新URL")
                     else:
                         logging.warning(f"订阅源 {url} 更新成功，但发送到频道失败")
@@ -94,6 +89,7 @@ async def scheduled_task(token):
         except Exception as e:
             logging.error(f"检查订阅源更新失败: {str(e)}", exc_info=True)
             await asyncio.sleep(60)  # 出错后等待1分钟再试
+
 
 
 
