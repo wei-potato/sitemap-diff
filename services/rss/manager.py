@@ -31,6 +31,7 @@ class RSSManager:
         """
         try:
             # 获取域名作为目录名
+            logging.info(f"尝试下载sitemap: {url}")
             domain = urlparse(url).netloc
             domain_dir = self.sitemap_dir / domain
             domain_dir.mkdir(parents=True, exist_ok=True)
@@ -38,11 +39,18 @@ class RSSManager:
             # 检查今天是否已经更新过
             last_update_file = domain_dir / "last_update.txt"
             today = datetime.now().strftime("%Y%m%d")
+            logging.info(f"今天的日期: {today}")
+
+            # 保存文件
+            current_file = domain_dir / "sitemap-current.xml"
+            latest_file = domain_dir / "sitemap-latest.xml"
+            dated_file = domain_dir / f"sitemap_{today}.xml"
 
             if last_update_file.exists():
                 last_date = last_update_file.read_text().strip()
+                logging.info(f"上次更新日期: {last_date}")
                 if last_date == today:
-                    return False, "今天已经更新过此sitemap", None, []  # 只添加空列表返回
+                    return dated_file.exists(), "今天已经更新过此sitemap", dated_file, []  # 只添加空列表返回
 
             # 下载新文件
             headers = {
@@ -50,11 +58,6 @@ class RSSManager:
             }
             response = requests.get(url, timeout=10, headers=headers)
             response.raise_for_status()
-
-            # 保存文件
-            current_file = domain_dir / "sitemap-current.xml"
-            latest_file = domain_dir / "sitemap-latest.xml"
-            dated_file = domain_dir / f"sitemap_{today}.xml"
 
             new_urls = []
             # 如果存在current文件，比较差异
