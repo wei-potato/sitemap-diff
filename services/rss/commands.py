@@ -43,11 +43,12 @@ async def send_sitemap_to_channel(bot, file_path: Path, url: str) -> bool:
 
 async def send_new_urls_to_channel(bot, url: str, new_urls: list[str]) -> None:
     """发送新增的URL到频道"""
-    if not new_urls:
-        return
-
     try:
-        message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
+        if not new_urls:
+            message = f"今日无新增URL\n来源: {url}"
+        else:
+            message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
+
         await bot.send_message(
             chat_id=RSS_CHANNEL,
             text=message,
@@ -161,6 +162,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
+
 
 
 
