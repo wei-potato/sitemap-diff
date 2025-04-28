@@ -63,7 +63,7 @@ async def scheduled_task(token):
 
     while True:
         try:
-            from services.rss.commands import rss_manager, send_sitemap_to_channel, send_new_urls_to_channel
+            from services.rss.commands import rss_manager, send_sitemap, send_new_urls
             feeds = rss_manager.get_feeds()
             logging.info(f"定时任务开始检查订阅源更新，共 {len(feeds)} 个订阅")
 
@@ -72,9 +72,9 @@ async def scheduled_task(token):
                 success, error_msg, dated_file, new_urls = rss_manager.add_feed(url)
 
                 if success and dated_file:
-                    send_result = await send_sitemap_to_channel(bot, dated_file, url)
+                    send_result = await send_sitemap(bot, dated_file, url)
                     if send_result:
-                        await send_new_urls_to_channel(bot, url, new_urls)
+                        await send_new_urls(bot, url, new_urls)
                         logging.info(f"订阅源 {url} 更新成功，发现 {len(new_urls)} 个新URL")
                     else:
                         logging.warning(f"订阅源 {url} 更新成功，但发送到频道失败")
@@ -89,6 +89,7 @@ async def scheduled_task(token):
         except Exception as e:
             logging.error(f"检查订阅源更新失败: {str(e)}", exc_info=True)
             await asyncio.sleep(60)  # 出错后等待1分钟再试
+
 
 
 

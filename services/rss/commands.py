@@ -4,45 +4,51 @@ import logging
 from .manager import RSSManager
 from pathlib import Path
 from urllib.parse import urlparse
+from core.config import telegram_config
 
 rss_manager = RSSManager()
-RSS_CHANNEL = "@h5gamerss"  # 固定频道ID
 
-async def check_bot_channel_admin(bot) -> bool:
-    """检查机器人是否是频道管理员"""
-    try:
-        chat_member = await bot.get_chat_member(
-            chat_id=RSS_CHANNEL,
-            user_id=bot.id
-        )
-        return chat_member.status in ['administrator', 'creator']
-    except Exception as e:
-        logging.error(f"检查机器人权限失败: {str(e)}")
+async def send_sitemap(bot, file_path: Path, url: str, target_chat: str = None) -> bool:
+    """发送sitemap文件到指定目标
+
+    Args:
+        bot: Telegram bot实例
+        file_path: sitemap文件路径
+        url: sitemap来源URL
+        target_chat: 发送目标ID,默认使用配置中的target_chat
+    """
+    chat_id = target_chat or telegram_config['target_chat']
+    if not chat_id:
+        logging.error("未配置发送目标，请检查TELEGRAM_TARGET_CHAT环境变量")
         return False
 
-async def send_sitemap_to_channel(bot, file_path: Path, url: str) -> bool:
-    """发送sitemap文件到频道"""
     try:
-        # 先检查机器人权限
-        if not await check_bot_channel_admin(bot):
-            raise Exception("机器人不是频道管理员，请先将机器人添加为频道管理员")
-
-        # 发送文件
         await bot.send_document(
-            chat_id=RSS_CHANNEL,
+            chat_id=chat_id,
             document=file_path,
             caption=f"新的Sitemap文件\nURL: {url}"
         )
-        # 发送成功后删除临时文件
         file_path.unlink()
-        logging.info(f"已发送sitemap文件到频道并删除: {file_path}")
+        logging.info(f"已发送sitemap文件并删除: {file_path}")
         return True
     except Exception as e:
-        logging.error(f"发送文件到频道失败: {str(e)}")
+        logging.error(f"发送文件失败: {str(e)}")
         return False
 
-async def send_new_urls_to_channel(bot, url: str, new_urls: list[str]) -> None:
-    """发送新增的URL到频道"""
+async def send_new_urls(bot, url: str, new_urls: list[str], target_chat: str = None) -> None:
+    """发送新增的URL到指定目标
+
+    Args:
+        bot: Telegram bot实例
+        url: sitemap来源URL
+        new_urls: 新增的URL列表
+        target_chat: 发送目标ID,默认使用配置中的target_chat
+    """
+    chat_id = target_chat or telegram_config['target_chat']
+    if not chat_id:
+        logging.error("未配置发送目标，请检查TELEGRAM_TARGET_CHAT环境变量")
+        return
+
     try:
         if not new_urls:
             message = f"今日无新增URL\n来源: {url}"
@@ -50,12 +56,12 @@ async def send_new_urls_to_channel(bot, url: str, new_urls: list[str]) -> None:
             message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
 
         await bot.send_message(
-            chat_id=RSS_CHANNEL,
+            chat_id=chat_id,
             text=message,
             disable_web_page_preview=True
         )
     except Exception as e:
-        logging.error(f"发送新增URL到频道失败: {str(e)}")
+        logging.error(f"发送新增URL失败: {str(e)}")
 
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """处理 /rss 命令"""
@@ -107,20 +113,15 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             else:
                 await update.message.reply_text(f"成功添加sitemap监控：{url}")
 
-            # 如果有新文件，发送到频道
+            # 如果有新文件，发送到目标
             if dated_file:
-                send_result = await send_sitemap_to_channel(context.bot, dated_file, url)
-                if isinstance(send_result, tuple):
-                    success, error_msg = send_result
-                    await update.message.reply_text(f"文件添加成功，但发送到频道失败：{error_msg}\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
-                    logging.error(f"发送sitemap到频道失败: {url}, 原因: {error_msg}")
-                elif send_result:
-                    logging.info(f"已发送sitemap到频道: {url}")
-                    # 只在这里添加发送新URLs的调用
-                    await send_new_urls_to_channel(context.bot, url, new_urls)
+                send_result = await send_sitemap(context.bot, dated_file, url)
+                if send_result:
+                    await send_new_urls(context.bot, url, new_urls)
+                    logging.info(f"已发送sitemap: {url}")
                 else:
-                    await update.message.reply_text(f"文件添加成功，但发送到频道失败\n请确保机器人已被添加为频道 {RSS_CHANNEL} 的管理员")
-                    logging.error(f"发送sitemap到频道失败: {url}")
+                    await update.message.reply_text(f"文件添加成功，但发送失败")
+                    logging.error(f"发送sitemap失败: {url}")
         else:
             if "今天已经更新过此sitemap" in error_msg:
                 # 获取当前文件并发送给用户
@@ -162,18 +163,5 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
 def register_commands(application: Application):
     """注册RSS相关的命令"""
     application.add_handler(CommandHandler('rss', rss_command))
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
