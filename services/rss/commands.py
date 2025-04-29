@@ -8,6 +8,7 @@ from core.config import telegram_config
 
 rss_manager = RSSManager()
 
+
 async def send_sitemap(bot, file_path: Path, url: str, target_chat: str = None) -> bool:
     """发送sitemap文件到指定目标
 
@@ -17,16 +18,14 @@ async def send_sitemap(bot, file_path: Path, url: str, target_chat: str = None) 
         url: sitemap来源URL
         target_chat: 发送目标ID,默认使用配置中的target_chat
     """
-    chat_id = target_chat or telegram_config['target_chat']
+    chat_id = target_chat or telegram_config["target_chat"]
     if not chat_id:
         logging.error("未配置发送目标，请检查TELEGRAM_TARGET_CHAT环境变量")
         return False
 
     try:
         await bot.send_document(
-            chat_id=chat_id,
-            document=file_path,
-            caption=f"新的Sitemap文件\nURL: {url}"
+            chat_id=chat_id, document=file_path, caption=f"新的Sitemap文件\nURL: {url}"
         )
         file_path.unlink()
         logging.info(f"已发送sitemap文件并删除: {file_path}")
@@ -35,7 +34,10 @@ async def send_sitemap(bot, file_path: Path, url: str, target_chat: str = None) 
         logging.error(f"发送文件失败: {str(e)}")
         return False
 
-async def send_new_urls(bot, url: str, new_urls: list[str], target_chat: str = None) -> None:
+
+async def send_new_urls(
+    bot, url: str, new_urls: list[str], target_chat: str = None
+) -> None:
     """发送新增的URL到指定目标
 
     Args:
@@ -44,7 +46,7 @@ async def send_new_urls(bot, url: str, new_urls: list[str], target_chat: str = N
         new_urls: 新增的URL列表
         target_chat: 发送目标ID,默认使用配置中的target_chat
     """
-    chat_id = target_chat or telegram_config['target_chat']
+    chat_id = target_chat or telegram_config["target_chat"]
     if not chat_id:
         logging.error("未配置发送目标，请检查TELEGRAM_TARGET_CHAT环境变量")
         return
@@ -53,15 +55,16 @@ async def send_new_urls(bot, url: str, new_urls: list[str], target_chat: str = N
         if not new_urls:
             message = f"今日无新增URL\n来源: {url}"
         else:
-            message = f"发现新增URL\n来源: {url}\n\n" + "\n".join([f"- {u}" for u in new_urls])
+            message = f"发现新增URL\n来源: {url}\n\n" + "\n".join(
+                [f"- {u}" for u in new_urls]
+            )
 
         await bot.send_message(
-            chat_id=chat_id,
-            text=message,
-            disable_web_page_preview=True
+            chat_id=chat_id, text=message, disable_web_page_preview=True
         )
     except Exception as e:
         logging.error(f"发送新增URL失败: {str(e)}")
+
 
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """处理 /rss 命令"""
@@ -80,7 +83,7 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         return
 
     cmd = context.args[0].lower()
-    if cmd == 'list':
+    if cmd == "list":
         logging.info("执行list命令")
         feeds = rss_manager.get_feeds()
         if not feeds:
@@ -92,20 +95,24 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         logging.info(f"显示RSS订阅列表，共 {len(feeds)} 个")
         await update.message.reply_text(f"当前RSS订阅列表：\n{feed_list}")
 
-    elif cmd == 'add':
+    elif cmd == "add":
         if len(context.args) < 2:
             logging.warning("add命令缺少URL参数")
-            await update.message.reply_text("请提供sitemap.xml的URL\n例如：/rss add https://example.com/sitemap.xml")
+            await update.message.reply_text(
+                "请提供sitemap.xml的URL\n例如：/rss add https://example.com/sitemap.xml"
+            )
             return
 
         url = context.args[1]
-        if not url.endswith('sitemap.xml'):
+        if not url.endswith("sitemap.xml"):
             logging.warning(f"无效的sitemap URL: {url}")
             await update.message.reply_text("URL必须以sitemap.xml结尾")
             return
 
         logging.info(f"执行add命令，URL: {url}")
-        success, error_msg, dated_file, new_urls = rss_manager.add_feed(url)  # 只改这一行，接收new_urls
+        success, error_msg, dated_file, new_urls = rss_manager.add_feed(
+            url
+        )  # 只改这一行，接收new_urls
 
         if success:
             if "已存在的feed更新成功" in error_msg:
@@ -127,12 +134,14 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                 # 获取当前文件并发送给用户
                 try:
                     domain = urlparse(url).netloc
-                    current_file = rss_manager.sitemap_dir / domain / "sitemap-current.xml"
+                    current_file = (
+                        rss_manager.sitemap_dir / domain / "sitemap-current.xml"
+                    )
                     if current_file.exists():
                         await context.bot.send_document(
                             chat_id=update.effective_chat.id,
                             document=current_file,
-                            caption=f"今天的Sitemap文件\nURL: {url}"
+                            caption=f"今天的Sitemap文件\nURL: {url}",
                         )
                         await update.message.reply_text(f"该sitemap今天已经更新过")
                     else:
@@ -142,12 +151,16 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
                     await update.message.reply_text(f"该sitemap今天已经更新过")
             else:
                 logging.error(f"添加sitemap监控失败: {url} 原因: {error_msg}")
-                await update.message.reply_text(f"添加sitemap监控失败：{url}\n原因：{error_msg}")
+                await update.message.reply_text(
+                    f"添加sitemap监控失败：{url}\n原因：{error_msg}"
+                )
 
-    elif cmd == 'del':
+    elif cmd == "del":
         if len(context.args) < 2:
             logging.warning("del命令缺少URL参数")
-            await update.message.reply_text("请提供要删除的RSS订阅链接\n例如：/rss del https://example.com/feed.xml")
+            await update.message.reply_text(
+                "请提供要删除的RSS订阅链接\n例如：/rss del https://example.com/feed.xml"
+            )
             return
 
         url = context.args[1]
@@ -158,10 +171,11 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             await update.message.reply_text(f"成功删除RSS订阅：{url}")
         else:
             logging.error(f"删除RSS订阅失败: {url} 原因: {error_msg}")
-            await update.message.reply_text(f"删除RSS订阅失败：{url}\n原因：{error_msg}")
+            await update.message.reply_text(
+                f"删除RSS订阅失败：{url}\n原因：{error_msg}"
+            )
+
 
 def register_commands(application: Application):
     """注册RSS相关的命令"""
-    application.add_handler(CommandHandler('rss', rss_command))
-
-
+    application.add_handler(CommandHandler("rss", rss_command))

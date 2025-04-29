@@ -6,36 +6,43 @@ import asyncio
 
 tel_bots = {}
 commands = [
-    BotCommand(command='help', description='Show help message'),
+    BotCommand(command="help", description="Show help message"),
 ]
+
 
 async def post_init(application: Application) -> None:
     await application.bot.set_my_commands(commands)
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await help(update, context)
+
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     help_text = f"Hello, {update.message.from_user.first_name}"
     await update.message.reply_text(help_text, disable_web_page_preview=True)
 
+
 async def run(token):
     global tel_bots
-    application = ApplicationBuilder() \
-        .token(token) \
-        .concurrent_updates(True) \
-        .post_init(post_init) \
+    application = (
+        ApplicationBuilder()
+        .token(token)
+        .concurrent_updates(True)
+        .post_init(post_init)
         .build()
+    )
 
     # 用token作为key存储bot实例
     tel_bots[token] = application.bot
 
     # 基础命令
-    application.add_handler(CommandHandler('start', start))
-    application.add_handler(CommandHandler('help', help))
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("help", help))
 
     # 从services加载其他命令
     from services.rss.commands import register_commands
+
     register_commands(application)
 
     await application.initialize()
@@ -43,14 +50,18 @@ async def run(token):
     logging.info("Telegram bot startup successful")
     await application.updater.start_polling(drop_pending_updates=True)
 
+
 async def init_task():
     logging.info("Initializing Telegram bot")
+
 
 async def start_task(token):
     return await run(token)
 
+
 def close_all():
     logging.info("Closing Telegram bot")
+
 
 async def scheduled_task(token):
     """定时任务"""
@@ -64,6 +75,7 @@ async def scheduled_task(token):
     while True:
         try:
             from services.rss.commands import rss_manager, send_sitemap, send_new_urls
+
             feeds = rss_manager.get_feeds()
             logging.info(f"定时任务开始检查订阅源更新，共 {len(feeds)} 个订阅")
 
@@ -75,7 +87,9 @@ async def scheduled_task(token):
                     send_result = await send_sitemap(bot, dated_file, url)
                     if send_result:
                         await send_new_urls(bot, url, new_urls)
-                        logging.info(f"订阅源 {url} 更新成功，发现 {len(new_urls)} 个新URL")
+                        logging.info(
+                            f"订阅源 {url} 更新成功，发现 {len(new_urls)} 个新URL"
+                        )
                     else:
                         logging.warning(f"订阅源 {url} 更新成功，但发送到频道失败")
                 else:
@@ -89,10 +103,3 @@ async def scheduled_task(token):
         except Exception as e:
             logging.error(f"检查订阅源更新失败: {str(e)}", exc_info=True)
             await asyncio.sleep(60)  # 出错后等待1分钟再试
-
-
-
-
-
-
-

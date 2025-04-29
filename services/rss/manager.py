@@ -5,6 +5,7 @@ from datetime import datetime
 from urllib.parse import urlparse
 import requests
 
+
 class RSSManager:
     def __init__(self):
         self.config_dir = Path("storage/rss/config")
@@ -18,7 +19,7 @@ class RSSManager:
         self.sitemap_dir.mkdir(parents=True, exist_ok=True)
 
         if not self.feeds_file.exists():
-            self.feeds_file.write_text('[]')
+            self.feeds_file.write_text("[]")
 
     def download_sitemap(self, url: str) -> tuple[bool, str, Path | None, list[str]]:
         """下载并保存sitemap文件
@@ -44,22 +45,33 @@ class RSSManager:
             # 保存文件
             current_file = domain_dir / "sitemap-current.xml"
             latest_file = domain_dir / "sitemap-latest.xml"
-            dated_file = domain_dir / f"sitemap_{today}.xml"
+            dated_file = domain_dir / f"{domain}_sitemap_{today}.xml"
 
             if last_update_file.exists():
                 last_date = last_update_file.read_text().strip()
                 logging.info(f"上次更新日期: {last_date}")
                 if last_date == today:
-                    if dated_file.exists() and current_file.exists() and latest_file.exists():
+                    if (
+                        dated_file.exists()
+                        and current_file.exists()
+                        and latest_file.exists()
+                    ):
                         current_content = current_file.read_text()
                         latest_content = latest_file.read_text()
-                        new_urls = self.compare_sitemaps(current_content, latest_content)
+                        new_urls = self.compare_sitemaps(
+                            current_content, latest_content
+                        )
                         return True, "今天已经更新过此sitemap", dated_file, new_urls
-                    return dated_file.exists(), "今天已经更新过此sitemap", dated_file, []
+                    return (
+                        dated_file.exists(),
+                        "今天已经更新过此sitemap",
+                        dated_file,
+                        [],
+                    )
 
             # 下载新文件
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
             }
             response = requests.get(url, timeout=10, headers=headers)
             response.raise_for_status()
@@ -168,18 +180,15 @@ class RSSManager:
             current_urls = set()
             old_urls = set()
 
-            ns = {'ns': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+            ns = {"ns": "http://www.sitemaps.org/schemas/sitemap/0.9"}
 
-            for url in current_root.findall('.//ns:url/ns:loc', ns):
+            for url in current_root.findall(".//ns:url/ns:loc", ns):
                 current_urls.add(url.text)
 
-            for url in old_root.findall('.//ns:url/ns:loc', ns):
+            for url in old_root.findall(".//ns:url/ns:loc", ns):
                 old_urls.add(url.text)
 
             return list(current_urls - old_urls)
         except Exception as e:
             logging.error(f"比较sitemap失败: {str(e)}")
             return []
-
-
-
