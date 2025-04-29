@@ -83,6 +83,16 @@ async def send_update_notification(
                 )
             logging.info(f"已发送 {len(new_urls)} 个新URL for {domain}")
 
+            # 发送更新结束的消息
+            end_message = (
+                f"------------------------------------\n"
+                f"✨ {domain} 更新推送完成 ✨\n"
+                f"------------------------------------"
+            )
+            await bot.send_message(
+                chat_id=chat_id, text=end_message, disable_web_page_preview=True
+            )
+
     except Exception as e:
         logging.error(f"发送URL更新消息失败 for {url}: {str(e)}")
 
