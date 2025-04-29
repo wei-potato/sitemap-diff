@@ -50,7 +50,12 @@ class RSSManager:
                 last_date = last_update_file.read_text().strip()
                 logging.info(f"上次更新日期: {last_date}")
                 if last_date == today:
-                    return dated_file.exists(), "今天已经更新过此sitemap", dated_file, []  # 只添加空列表返回
+                    if dated_file.exists() and current_file.exists() and latest_file.exists():
+                        current_content = current_file.read_text()
+                        latest_content = latest_file.read_text()
+                        new_urls = self.compare_sitemaps(current_content, latest_content)
+                        return True, "今天已经更新过此sitemap", dated_file, new_urls
+                    return dated_file.exists(), "今天已经更新过此sitemap", dated_file, []
 
             # 下载新文件
             headers = {
