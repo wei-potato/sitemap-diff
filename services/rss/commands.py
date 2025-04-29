@@ -38,7 +38,7 @@ async def send_sitemap(bot, file_path: Path, url: str, target_chat: str = None) 
 async def send_new_urls(
     bot, url: str, new_urls: list[str], target_chat: str = None
 ) -> None:
-    """发送新增的URL到指定目标
+    """发送新增的URL到指定目标，优化视觉分隔
 
     Args:
         bot: Telegram bot实例
@@ -52,16 +52,42 @@ async def send_new_urls(
         return
 
     try:
+        # 从URL中提取域名
+        domain = urlparse(url).netloc
+
         if not new_urls:
-            message = f"今日无新增URL\n来源: {url}"
+            # 如果没有新URL，发送简洁通知
+            message = f"✅ {domain} 今日没有更新"
+            await bot.send_message(
+                chat_id=chat_id,
+                text=message,
+                disable_web_page_preview=True
+            )
         else:
-            message = f"发现新增URL\n来源: {url}\n\n" + "\n".join(
-                [f"- {u}" for u in new_urls]
+            # 如果有新URL，发送一个美观的标题作为分隔
+            header_message = (
+                f"✨ {domain} ✨\n"
+                f"------------------------------------\n"
+                f"发现新增内容！\n"
+                f"来源: {url}\n"
+                f"------------------------------------"
+            )
+            await bot.send_message(
+                chat_id=chat_id,
+                text=header_message,
+                disable_web_page_preview=True  # 标题禁用预览
             )
 
-        await bot.send_message(
-            chat_id=chat_id, text=message, disable_web_page_preview=True
-        )
+            # 单独发送每个URL以利用预览
+            for u in new_urls:
+                await bot.send_message(
+                    chat_id=chat_id,
+                    text=u,
+                    disable_web_page_preview=False  # URL启用预览
+                )
+            # (可选) 可以在所有URL发送完毕后加一个结束分隔符，但可能会过于冗长
+            await bot.send_message(chat_id=chat_id, text="--- 更新结束 ---", disable_web_page_preview=True)
+
     except Exception as e:
         logging.error(f"发送新增URL失败: {str(e)}")
 
