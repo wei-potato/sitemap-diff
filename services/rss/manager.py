@@ -61,7 +61,7 @@ class RSSManager:
                         new_urls = self.compare_sitemaps(
                             current_content, latest_content
                         )
-                        return True, "今天已经更新过此sitemap", dated_file, new_urls
+                        return True, "今天已经更新过此sitemap, 但没发送", dated_file, new_urls
                     return (
                         dated_file.exists(),
                         "今天已经更新过此sitemap",
