@@ -221,11 +221,12 @@ async def send_keywords_summary(
     target_chat: str = None,
 ) -> None:
     """
-    从URL列表中提取关键词并发送汇总消息到所有订阅用户
+    从URL列表中提取关键词并按域名分组发送汇总消息
 
     Args:
         bot: Telegram Bot实例
         all_new_urls: 所有新增URL的列表
+        target_chat: 发送目标ID,默认使用配置中的target_chat
     """
     chat_id = target_chat or telegram_config["target_chat"]
     if not chat_id:
@@ -235,36 +236,49 @@ async def send_keywords_summary(
     if not all_new_urls:
         return
 
-    # 从URL中提取最后的路径名称，使用urlparse更规范地解析
-    keywords = []
+    # 创建域名-关键词映射字典
+    domain_keywords = {}
+
+    # 从URL中提取域名和关键词
     for url in all_new_urls:
         try:
-            # 使用urlparse解析URL，获取path部分
+            # 解析URL获取域名和路径
             parsed_url = urlparse(url)
-            # 移除路径末尾的斜杠，然后分割并获取最后一部分
+            domain = parsed_url.netloc
+
+            # 提取路径最后部分作为关键词
             path_parts = parsed_url.path.rstrip("/").split("/")
             if path_parts and path_parts[-1]:  # 确保有路径且最后部分不为空
-                # 保留原始连词符号
                 keyword = path_parts[-1]
-                # 只添加非空的关键词
                 if keyword.strip():
-                    keywords.append(keyword)
+                    # 将关键词添加到对应域名的列表中
+                    if domain not in domain_keywords:
+                        domain_keywords[domain] = []
+                    domain_keywords[domain].append(keyword)
         except Exception as e:
             logging.debug(f"从URL提取关键词失败: {url}, 错误: {str(e)}")
             continue
 
-    # 去重关键词
-    unique_keywords = list(set(keywords))
+    # 对每个域名的关键词列表去重
+    for domain in domain_keywords:
+        domain_keywords[domain] = list(set(domain_keywords[domain]))
 
-    if unique_keywords:
-        # 构建今日新增关键词消息
+    # 如果有关键词，构建并发送消息
+    if domain_keywords:
+        # 构建今日新增关键词消息，按域名分组
         summary_message = (
             "━━━━━━━━━━━━━━━━━━\n" "🎯 今日新增关键词速览 🎯\n" "━━━━━━━━━━━━━━━━━━\n\n"
         )
-        for i, keyword in enumerate(unique_keywords, 1):
-            summary_message += f"{i}. {keyword}\n"
 
-        # 发送汇总消息到所有订阅了任意源的用户
+        # 按域名分组展示关键词
+        for domain, keywords in domain_keywords.items():
+            if keywords:  # 确保该域名有关键词
+                summary_message += f"📌 {domain}:\n"
+                for i, keyword in enumerate(keywords, 1):
+                    summary_message += f"  {i}. {keyword}\n"
+                summary_message += "\n"  # 域名之间添加空行分隔
+
+        # 发送汇总消息
         try:
             await bot.send_message(
                 chat_id=chat_id, text=summary_message, disable_web_page_preview=True
