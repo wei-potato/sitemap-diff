@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from .manager import RSSManager
 from pathlib import Path
 from urllib.parse import urlparse
@@ -73,7 +74,7 @@ async def send_update_notification(
                     chat_id=chat_id, text=header_message, disable_web_page_preview=True
                 )
 
-        # 单独发送每个URL
+        await asyncio.sleep(1)
         if new_urls:
             logging.info(f"开始发送 {len(new_urls)} 个新URL for {domain}")
             for u in new_urls:
@@ -81,16 +82,18 @@ async def send_update_notification(
                     chat_id=chat_id, text=u, disable_web_page_preview=False
                 )
                 logging.info(f"已发送URL: {u}")
+                await asyncio.sleep(1)
             logging.info(f"已发送 {len(new_urls)} 个新URL for {domain}")
 
             # 发送更新结束的消息
+            await asyncio.sleep(1)
             end_message = (
                 f"✨ {domain} 更新推送完成 ✨\n------------------------------------"
             )
             await bot.send_message(
                 chat_id=chat_id, text=end_message, disable_web_page_preview=True
             )
-
+            logging.info(f"已发送更新结束消息 for {domain}")
     except Exception as e:
         logging.error(f"发送URL更新消息失败 for {url}: {str(e)}", exc_info=True)
         # logging.traceback.print_exc()
