@@ -35,13 +35,12 @@ async def send_update_notification(
                     f"------------------------------------\n"
                     f"发现新增内容！ (共 {len(new_urls)} 条)\n"
                     f"来源: {url}\n"
-                    f"------------------------------------"
                 )
             else:
                 header_message = (
                     f"✅ {domain}\n"
                     f"------------------------------------\n"
-                    f"{domain} 今日sitemap\n"
+                    f"{domain} 今日sitemap无更新\n"
                     f"来源: {url}\n"
                     f"------------------------------------"
                 )
@@ -69,7 +68,6 @@ async def send_update_notification(
                     f"------------------------------------\n"
                     f"发现新增内容！ (共 {len(new_urls)} 条)\n"
                     f"来源: {url}\n"
-                    f"------------------------------------"
                 )
                 await bot.send_message(
                     chat_id=chat_id, text=header_message, disable_web_page_preview=True
@@ -85,7 +83,6 @@ async def send_update_notification(
 
             # 发送更新结束的消息
             end_message = (
-                f"------------------------------------\n"
                 f"✨ {domain} 更新推送完成 ✨\n"
                 f"------------------------------------"
             )
