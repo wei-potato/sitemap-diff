@@ -135,8 +135,9 @@ async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
             return
 
         url = context.args[1]
-        if not url.endswith("sitemap.xml"):
-            logging.warning(f"无效的sitemap URL: {url}")
+        # 检查URL是否包含sitemap关键词，不再强制要求.xml后缀
+        if "sitemap" not in url.lower():
+            logging.warning(f"无效的sitemap URL: {url} (URL需包含sitemap关键词)")
             await update.message.reply_text("URL必须以sitemap.xml结尾")
             return
 
