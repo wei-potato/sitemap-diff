@@ -75,22 +75,25 @@ async def send_update_notification(
 
         # 单独发送每个URL
         if new_urls:
+            logging.info(f"开始发送 {len(new_urls)} 个新URL for {domain}")
             for u in new_urls:
                 await bot.send_message(
                     chat_id=chat_id, text=u, disable_web_page_preview=False
                 )
+                logging.info(f"已发送URL: {u}")
             logging.info(f"已发送 {len(new_urls)} 个新URL for {domain}")
 
             # 发送更新结束的消息
             end_message = (
-                f"✨ {domain} 更新推送完成 ✨\n" f"------------------------------------"
+                f"✨ {domain} 更新推送完成 ✨\n------------------------------------"
             )
             await bot.send_message(
                 chat_id=chat_id, text=end_message, disable_web_page_preview=True
             )
 
     except Exception as e:
-        logging.error(f"发送URL更新消息失败 for {url}: {str(e)}")
+        logging.error(f"发送URL更新消息失败 for {url}: {str(e)}", exc_info=True)
+        # logging.traceback.print_exc()
 
 
 async def rss_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
