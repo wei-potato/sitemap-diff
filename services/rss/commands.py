@@ -83,8 +83,7 @@ async def send_update_notification(
 
             # 发送更新结束的消息
             end_message = (
-                f"✨ {domain} 更新推送完成 ✨\n"
-                f"------------------------------------"
+                f"✨ {domain} 更新推送完成 ✨\n" f"------------------------------------"
             )
             await bot.send_message(
                 chat_id=chat_id, text=end_message, disable_web_page_preview=True
@@ -213,4 +212,59 @@ def register_commands(application: Application):
     application.add_handler(CommandHandler("rss", rss_command))
 
 
-# 确保移除了旧的 send_sitemap 和 send_new_urls 函数定义
+async def send_keywords_summary(
+    bot: Bot,
+    all_new_urls: list[str],
+    target_chat: str = None,
+) -> None:
+    """
+    从URL列表中提取关键词并发送汇总消息到所有订阅用户
+
+    Args:
+        bot: Telegram Bot实例
+        all_new_urls: 所有新增URL的列表
+    """
+    chat_id = target_chat or telegram_config["target_chat"]
+    if not chat_id:
+        logging.error("未配置发送目标，请检查TELEGRAM_TARGET_CHAT环境变量")
+        return
+
+    if not all_new_urls:
+        return
+
+    # 从URL中提取最后的路径名称，使用urlparse更规范地解析
+    keywords = []
+    for url in all_new_urls:
+        try:
+            # 使用urlparse解析URL，获取path部分
+            parsed_url = urlparse(url)
+            # 移除路径末尾的斜杠，然后分割并获取最后一部分
+            path_parts = parsed_url.path.rstrip("/").split("/")
+            if path_parts and path_parts[-1]:  # 确保有路径且最后部分不为空
+                # 保留原始连词符号
+                keyword = path_parts[-1]
+                # 只添加非空的关键词
+                if keyword.strip():
+                    keywords.append(keyword)
+        except Exception as e:
+            logging.debug(f"从URL提取关键词失败: {url}, 错误: {str(e)}")
+            continue
+
+    # 去重关键词
+    unique_keywords = list(set(keywords))
+
+    if unique_keywords:
+        # 构建今日新增关键词消息
+        summary_message = (
+            "━━━━━━━━━━━━━━━━━━\n" "🎯 今日新增关键词速览 🎯\n" "━━━━━━━━━━━━━━━━━━\n\n"
+        )
+        for i, keyword in enumerate(unique_keywords, 1):
+            summary_message += f"{i}. {keyword}\n"
+
+        # 发送汇总消息到所有订阅了任意源的用户
+        try:
+            await bot.send_message(
+                chat_id=chat_id, text=summary_message, disable_web_page_preview=True
+            )
+        except Exception as e:
+            logging.error(f"发送关键词汇总消息失败 (chat_id: {chat_id}): {str(e)}")

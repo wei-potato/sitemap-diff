@@ -73,13 +73,19 @@ async def scheduled_task(token):
         return
 
     # 修改导入
-    from services.rss.commands import rss_manager, send_update_notification
+    from services.rss.commands import (
+        rss_manager,
+        send_update_notification,
+        send_keywords_summary,
+    )
 
     while True:
         try:
             feeds = rss_manager.get_feeds()
             logging.info(f"定时任务开始检查订阅源更新，共 {len(feeds)} 个订阅")
 
+            # 用于存储所有新增的URL
+            all_new_urls = []
             for url in feeds:
                 logging.info(f"正在检查订阅源: {url}")
                 # add_feed 内部会调用 download_sitemap
@@ -98,6 +104,11 @@ async def scheduled_task(token):
                     logging.info(f"订阅源 {url} {error_msg}")
                 else:
                     logging.warning(f"订阅源 {url} 更新失败: {error_msg}")
+                # 将新URL添加到汇总列表中
+                all_new_urls.extend(new_urls)
+
+            # 调用新封装的函数发送关键词汇总
+            await send_keywords_summary(bot, all_new_urls)
 
             logging.info("所有订阅源检查完成，等待下一次检查")
             await asyncio.sleep(3600)  # 保持1小时检查间隔
