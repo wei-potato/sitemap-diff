@@ -8,8 +8,6 @@ from sqlalchemy import Column, DateTime, update, desc
 from spider.common.logger import logger
 from .db_conn import SQLAlchemyConnection
 
-
-
 Base = declarative_base()
 T = TypeVar('T', bound='BaseModel')
 

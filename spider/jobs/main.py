@@ -1,14 +1,9 @@
 import sys
 import os
-from pathlib import Path
-print(f"Current directory: {os.getcwd()}")
-print(f"File location: {__file__}")
-print(f"Sys path before: {sys.path}")
+
 # 添加父目录到sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-project_root = Path(__file__).parent.parent.absolute()
-sys.path.insert(0, str(project_root))
-print(f"Sys path after: {sys.path}")
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -20,8 +15,8 @@ from datasource.spy import Spy
 from webapp.model.session import Session
 from webapp.model.rs import RS
 from webapp.model.multiline import Multiline
-from common.const import RootKeywords
-from common.logger import logger
+from spider.common.const import RootKeywords
+from spider.common.logger import logger
 
 def collect_rs(rk: str, sess: Session):
   for i in range(5):

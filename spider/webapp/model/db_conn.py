@@ -2,8 +2,8 @@ from sqlalchemy import create_engine, Engine, text
 from sqlalchemy.orm import sessionmaker, scoped_session
 from sqlalchemy.exc import OperationalError, DisconnectionError, SQLAlchemyError
 
-from common import config
-from common.logger import logger
+from spider.common import config
+from spider.common.logger import logger
 
 class SQLAlchemyConnection:
 
