@@ -11,7 +11,7 @@ venv/
 .env
 
 # 项目运行时生成的数据
-storage/
+
 /tmp/site-bot.log
 
 # 系统文件
