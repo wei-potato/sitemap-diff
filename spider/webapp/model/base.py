@@ -5,8 +5,10 @@ import pandas as pd
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, DateTime, update, desc
 
-from common.logger import logger
+from spider.common.logger import logger
 from .db_conn import SQLAlchemyConnection
+
+
 
 Base = declarative_base()
 T = TypeVar('T', bound='BaseModel')
