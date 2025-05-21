@@ -1,5 +1,3 @@
 python-dotenv
-python-telegram-bot
 argparse
-discord
-requests
+
