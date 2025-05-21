@@ -5,7 +5,8 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from tqdm import tqdm
 # 添加项目根目录到系统路径
-
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent / "spider"))
 # 导入配置和RSS管理器
 from config.config import domainlist
 from services.rss.manager import RSSManager
