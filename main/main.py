@@ -5,9 +5,6 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from tqdm import tqdm
 # 添加项目根目录到系统路径
-current_dir = Path(__file__).parent.absolute()
-project_root = current_dir.parent.absolute()
-sys.path.insert(0, str(project_root))
 
 # 导入配置和RSS管理器
 from config.config import domainlist
