@@ -14,3 +14,7 @@
 数据库连接成功
 2025-05-21 14:58:33 | INFO     | webapp.model.db_conn:__connect:71 | 
 数据库连接成功
+2025-06-03 17:19:50 | INFO     | spider.webapp.model.db_conn:__connect:71 | 
+数据库连接成功
+2025-06-03 17:19:50 | INFO     | webapp.model.db_conn:__connect:71 | 
+数据库连接成功
