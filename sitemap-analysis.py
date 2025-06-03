@@ -147,12 +147,12 @@ def main():
             for word in result["word_list"]:
                 print(f"  - {word}")
             print("")
-    # rss = RS.conn.session.query(RS).filter(RS.session_uuid==sess.uuid).all()
+    rss = RS.conn.session.query(RS).filter(RS.session_uuid==sess.uuid).all()
 
-    # for rs in tqdm(rss, total=len(rss), desc='Collecting Multiline'):
-    #     collect_multiline(rs, sess=sess)
+    for rs in tqdm(rss, total=len(rss), desc='Collecting Multiline'):
+        collect_multiline(rs, sess=sess)
     
-    # return results
+    return results
 
 if __name__ == "__main__":
     main()
