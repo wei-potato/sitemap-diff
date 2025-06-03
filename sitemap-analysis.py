@@ -48,14 +48,14 @@ def extract_keyword_from_url(url: str) -> str:
 
 def process_domain(domain: str, session) -> tuple[bool, list[str], list[str]]:
     """
-    处理单个域名的sitemap，检查更新并返回新增链接和关键词
+    处理单个域名的sitemap，获取所有链接并返回所有URL和关键词
     
     Args:
         domain: 域名或直接的sitemap URL
         session: 当前会话对象
         
     Returns:
-        tuple[bool, list[str], list[str]]: (是否成功, 新增的URL列表, 提取的关键词列表)
+        tuple[bool, list[str], list[str]]: (是否成功, 所有URL列表, 提取的关键词列表)
     """
     rss_manager = RSSManager()
     
@@ -63,19 +63,26 @@ def process_domain(domain: str, session) -> tuple[bool, list[str], list[str]]:
     sitemap_url = domain if domain.endswith('.xml') else urljoin(domain, 'sitemap.xml')
     logging.info(f"处理域名: {domain}, sitemap URL: {sitemap_url}")
     
-    # 下载并比较sitemap
-    success, error_msg, file_path, new_urls = rss_manager.add_feed(sitemap_url)
+    # 下载sitemap（不需要比较，只需要获取所有URL）
+    success, error_msg, file_path, _ = rss_manager.add_feed(sitemap_url)
     
     if not success:
         logging.error(f"处理域名 {domain} 失败: {error_msg}")
         return False, [], []
     
-    # 需要获取sitemap中的所有URL来提取关键词
-    # 这里需要调用rss_manager的方法来获取所有URL，而不仅仅是新增的
-    all_urls = rss_manager.get_all_urls(sitemap_url)  # 假设这个方法存在
+    # 获取sitemap中的所有URL
+    all_urls = rss_manager.get_all_urls(sitemap_url)
+    
+    if not all_urls:
+        logging.warning(f"域名 {domain} 的sitemap中没有找到任何URL")
+        return True, [], []
     
     # 从所有URL中提取关键词
-    word_list = [extract_keyword_from_url(url) for url in all_urls]
+    word_list = []
+    for url in all_urls:
+        keyword = extract_keyword_from_url(url)
+        if keyword:
+            word_list.append(keyword)
     
     # 保存关键词到RS表
     for word in word_list:
@@ -91,12 +98,10 @@ def process_domain(domain: str, session) -> tuple[bool, list[str], list[str]]:
     RS.conn.session.commit()
     
     logging.info(f"域名 {domain} 处理成功")
-    if new_urls:
-        logging.info(f"发现 {len(new_urls)} 个新链接")
-    else:
-        logging.info("没有发现新链接")
+    logging.info(f"总共找到 {len(all_urls)} 个链接")
+    logging.info(f"提取到 {len(word_list)} 个关键词")
     
-    return True, new_urls, word_list
+    return True, all_urls, word_list
 
 def main():
     """
@@ -125,14 +130,17 @@ def main():
     print("\n处理结果摘要:")
     for domain, result in results.items():
         status = "成功" if result["success"] else "失败"
-        new_count = len(result["new_urls"])
-        print(f"{domain}: {status}, 新链接数: {new_count}")
+        total_count = len(result["new_urls"])  # 现在是所有URL的数量
+        word_count = len(result["word_list"])
+        print(f"{domain}: {status}, 总链接数: {total_count}, 关键词数: {word_count}")
         
-        if new_count > 0:
-            print("新链接:")
-            for i, url in enumerate(result["new_urls"]):
+        if total_count > 0:
+            print("所有链接:")
+            for url in result["new_urls"]:  # 现在包含所有URL
+                keyword = extract_keyword_from_url(url)
                 print(f"  - {url}")
-                print(f"    关键词: {result['word_list'][i]}")
+                if keyword:
+                    print(f"    关键词: {keyword}")
             print("")
             
             print("提取的关键词列表:")
