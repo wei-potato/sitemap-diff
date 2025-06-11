@@ -1,4 +1,4 @@
-domainlist=["https://gorillatag.io/",
-            "https://azgames.io/sitemap.xml",
+domainlist=["https://www.crazygames.com/sitemap",
+              "https://poki.com/id/sitemaps/games.xml"
                
             ]
