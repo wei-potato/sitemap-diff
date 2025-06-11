@@ -32,7 +32,11 @@ domainlist=["https://www.crazygames.com/sitemap",
               "https://kbhgames.com/post-sitemap27.xml",
               "https://kbhgames.com/post-sitemap28.xml",
               "https://kbhgames.com/post-sitemap29.xml",
-              "https://kbhgames.com/post-sitemap30.xml"
+              "https://kbhgames.com/post-sitemap30.xml",
+              "https://www.play-games.com/sitemap/gamessitemap-0.xml",
+              "https://www.play-games.com/sitemap/gamessitemap-1.xml",
+              "https://www.play-games.com/sitemap/gamessitemap-2.xml",
+              "https://iyigames.com/sitemap.xml"
             ]
 onetimedomainlist=[
               "https://www.yeschat.ai/sitemap-secondary-page-0.xml"
