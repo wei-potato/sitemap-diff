@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse
 from tqdm import tqdm
 
 # 导入配置和RSS管理器
-from config.config import domainlist
+from config.config import onetimedomainlist
 from services.rss.manager import RSSManager
 current_dir = Path(__file__).parent.absolute()
 sys.path.append(str(current_dir))
@@ -115,7 +115,7 @@ def main():
     
     results = {}
     
-    for domain in domainlist:
+    for domain in onetimedomainlist:
         if not domain:
             continue
             
