@@ -1,7 +1,39 @@
 domainlist=["https://www.crazygames.com/sitemap",
-              "https://poki.com/id/sitemaps/games.xml"
-               
+              "https://poki.com/id/sitemaps/games.xml",
+              "https://www.miniplay.com/sitemap-games-1.xml",
+              "https://www.miniplay.com/sitemap-games-2.xml",
+              "https://www.miniplay.com/sitemap-games-3.xml",
+              "https://kbhgames.com/post-sitemap.xml",
+              "https://kbhgames.com/post-sitemap2.xml",
+              "https://kbhgames.com/post-sitemap3.xml",
+              "https://kbhgames.com/post-sitemap4.xml",
+              "https://kbhgames.com/post-sitemap5.xml",
+              "https://kbhgames.com/post-sitemap6.xml",
+              "https://kbhgames.com/post-sitemap7.xml",
+              "https://kbhgames.com/post-sitemap8.xml",
+              "https://kbhgames.com/post-sitemap9.xml",
+              "https://kbhgames.com/post-sitemap10.xml",
+              "https://kbhgames.com/post-sitemap11.xml",
+              "https://kbhgames.com/post-sitemap12.xml",
+              "https://kbhgames.com/post-sitemap13.xml",
+              "https://kbhgames.com/post-sitemap14.xml",
+              "https://kbhgames.com/post-sitemap15.xml",
+              "https://kbhgames.com/post-sitemap16.xml",
+              "https://kbhgames.com/post-sitemap17.xml",
+              "https://kbhgames.com/post-sitemap18.xml",
+              "https://kbhgames.com/post-sitemap19.xml",
+              "https://kbhgames.com/post-sitemap20.xml",
+              "https://kbhgames.com/post-sitemap21.xml",
+              "https://kbhgames.com/post-sitemap22.xml",
+              "https://kbhgames.com/post-sitemap23.xml",
+              "https://kbhgames.com/post-sitemap24.xml",
+              "https://kbhgames.com/post-sitemap25.xml",
+              "https://kbhgames.com/post-sitemap26.xml",
+              "https://kbhgames.com/post-sitemap27.xml",
+              "https://kbhgames.com/post-sitemap28.xml",
+              "https://kbhgames.com/post-sitemap29.xml",
+              "https://kbhgames.com/post-sitemap30.xml"
             ]
-onetimedomainlist=["https://www.crazygames.com/sitemap",
-              "https://poki.com/id/sitemaps/games.xml"
+onetimedomainlist=[
+              "https://www.yeschat.ai/sitemap-secondary-page-0.xml"
             ]
