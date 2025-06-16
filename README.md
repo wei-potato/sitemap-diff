@@ -127,3 +127,5 @@ project/
    - 自动对比并发现新增的URL
    - 将更新内容发送到指定频道/用户
 
+sitemap-analysis 里面的rk 会设置为game-word
+

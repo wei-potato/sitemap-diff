@@ -1,7 +1,7 @@
 import os, sys
 
 mysql_uri = os.environ.get('MYSQL_URI', 'mysql+pymysql://root:duwei123@localhost/googletrend')
-proxy = 'brd-customer-hl_0842853d-zone-datacenter_proxy1:q3d2vxm3uq66@brd.superproxy.io:33335'
+proxy = 'brd-customer-hl_0842853d-zone-datacenter_proxy2:s1lkyfas9g9x@brd.superproxy.io:33335'
 redis_host = os.environ.get('REDIS_HOST', '139.224.31.38')
 redis_pass = os.environ.get('REDIS_PASS', 'lanxiaocong123')
 
